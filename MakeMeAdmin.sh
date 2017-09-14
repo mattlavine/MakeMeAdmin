@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
 # Copyright (c) 2016, JAMF Software, LLC.  All rights reserved.
 #
@@ -26,12 +26,12 @@
 #       (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 #       SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
 # This script will accomplish the following:
-# 			- Check to See if Self Service User is the same as the one assigned to this 
+# 			- Check to See if Self Service User is the same as the one assigned to this
 #			  computer in the JSS
 #			- If so, will grant the local user currently login in admin rights
 #			- If not, will get a prompt that this computer is not assigned to them
@@ -50,27 +50,26 @@
 #
 # Created On: May 26th, 2016
 # Updated On: May 27th, 2016
-# 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # VARIABLES
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 jssUser="$4"
 jssPass="$5"
 jssURL="https://jss.acme.com:8443"
 
-loggedInUser=$( stat -f%Su /dev/console )
+loggedInUser=`python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");'`
 compSerial=$( system_profiler SPHardwareDataType | grep Serial |  awk '{print $NF}' )
 jssCompUser=$( /usr/bin/curl -s -u ${jssUser}:${jssPass} ${jssURL}/JSSResource/computers/serialnumber/${compSerial}/subset/location | /usr/bin/xpath "//computer/location/username/text()" )
-selfServiceUser=$( defaults read /Users/${loggedInUser}/Library/Preferences/com.jamfsoftware.selfservice.plist LastLoggedInUser "" )
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # APPLICATION
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-echo "Current Self Service User: ${selfServiceUser}"
+echo "Current User: ${loggedInUser}"
 echo "Current user assigned in JSS: ${jssCompUser}"
 
 ## check is JSS is accessible
@@ -89,8 +88,8 @@ if [[ "${jssCompUser}" == "" ]]; then
     exit 2
 fi
 
-## check if self service user matches user assigned to computer in jss
-if [[ "${jssCompUser}" == "${selfServiceUser}" ]]; then
+## check if logged in user matches user assigned to computer in JSS
+if [[ "${jssCompUser}" == "${loggedInUser}" ]]; then
 	echo "User is authorized to become an administrator on this computer."
 	echo "Granting local admin rights to user: ${jssCompUser} as ${loggedInUser}..."
 	# give current logged user admin rights
